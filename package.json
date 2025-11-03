@@ -14,7 +14,12 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@farcaster/miniapp-sdk": "^0.1.10",
-    "outstatic": "^1.4.9"
+    "outstatic": "^1.4.9",
+    "wagmi": "^2.12.29",
+    "viem": "^2.21.45",
+    "@rainbow-me/rainbowkit": "^2.2.1",
+    "@coinbase/onchainkit": "^1.0.2",
+    "@tanstack/react-query": "^5.62.8"
   },
   "devDependencies": {
     "@types/node": "^22",
