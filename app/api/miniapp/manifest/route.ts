@@ -1,0 +1,23 @@
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const manifest = {
+    accountAssociation: {
+      header: "eyJmaWQiOjEyMzQ1LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4MTIzNDU2Nzg5MGFiY2RlZiJ9",
+      payload: "eyJkb21haW4iOiJ3ZWIzLWxlYXJuaW5nLXBsYXRmb3JtIn0",
+      signature: "MHgxMjM0NTY3ODkwYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY3ODkw"
+    },
+    miniapp: {
+      version: "1",
+      name: "Web3 Learning Academy",
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/2942/2942156.png",
+      homeUrl: "/",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/2942/2942156.png",
+      buttonTitle: "🎓 Start Learning",
+      splashImageUrl: "https://cdn-icons-png.flaticon.com/512/2942/2942156.png",
+      splashBackgroundColor: "#6366f1"
+    }
+  };
+
+  return NextResponse.json(manifest);
+}
