@@ -1,28 +1,41 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { lessons } from "@/lib/lessons";
 import { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
+import { useMintBadge } from "@/hooks/useMintBadge";
+import { useHasCompletedLesson } from "@/hooks/useUserBadges";
+import { ConnectWallet } from "@/components/ConnectWallet";
 
 export default function LessonPage() {
   const params = useParams();
-  const router = useRouter();
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  
+  const { isConnected } = useAccount();
   const lesson = lessons.find((l) => l.id === params.id);
+  const lessonId = lesson ? parseInt(lesson.id) : 0;
+  
+  const { hasCompleted } = useHasCompletedLesson(lessonId);
+  const { mintBadge, isPending, isConfirming, isConfirmed, hash, error } = useMintBadge();
+  
+  const [localCompleted, setLocalCompleted] = useState(false);
 
   useEffect(() => {
-    if (lesson) {
+    if (lesson && !isConnected) {
       const completedLessons = JSON.parse(
         localStorage.getItem("completedLessons") || "[]"
       );
       if (completedLessons.includes(lesson.id)) {
-        setCompleted(true);
+        setLocalCompleted(true);
       }
     }
-  }, [lesson]);
+  }, [lesson, isConnected]);
+
+  useEffect(() => {
+    if (isConfirmed) {
+      setLocalCompleted(true);
+    }
+  }, [isConfirmed]);
 
   if (!lesson) {
     return (
@@ -43,34 +56,40 @@ export default function LessonPage() {
   }
 
   const handleCompleteLesson = async () => {
-    setIsCompleting(true);
-    
-    const completedLessons = JSON.parse(
-      localStorage.getItem("completedLessons") || "[]"
-    );
-    
-    if (!completedLessons.includes(lesson.id)) {
-      completedLessons.push(lesson.id);
-      localStorage.setItem(
-        "completedLessons",
-        JSON.stringify(completedLessons)
+    if (!isConnected) {
+      const completedLessons = JSON.parse(
+        localStorage.getItem("completedLessons") || "[]"
       );
       
-      const badges = JSON.parse(localStorage.getItem("badges") || "[]");
-      badges.push({
-        lessonId: lesson.id,
-        lessonTitle: lesson.title,
-        badgeName: lesson.badge.name,
-        badgeImage: lesson.badge.image,
-        mintedAt: new Date().toISOString(),
-      });
-      localStorage.setItem("badges", JSON.stringify(badges));
+      if (!completedLessons.includes(lesson.id)) {
+        completedLessons.push(lesson.id);
+        localStorage.setItem(
+          "completedLessons",
+          JSON.stringify(completedLessons)
+        );
+        
+        const badges = JSON.parse(localStorage.getItem("badges") || "[]");
+        badges.push({
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          badgeName: lesson.badge.name,
+          badgeImage: lesson.badge.image,
+          mintedAt: new Date().toISOString(),
+        });
+        localStorage.setItem("badges", JSON.stringify(badges));
+      }
+      
+      setLocalCompleted(true);
+    } else {
+      try {
+        await mintBadge(lessonId);
+      } catch (err) {
+        console.error("Failed to mint badge:", err);
+      }
     }
-    
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsCompleting(false);
-    setCompleted(true);
   };
+
+  const completed = isConnected ? (hasCompleted || isConfirmed) : localCompleted;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500">
@@ -115,6 +134,15 @@ export default function LessonPage() {
           </div>
 
           <div className="border-t pt-6">
+            {!isConnected && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                <p className="text-blue-800 mb-3">
+                  🔗 Connect your wallet to mint NFT badges on Base blockchain
+                </p>
+                <ConnectWallet />
+              </div>
+            )}
+            
             {completed ? (
               <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                 <div className="text-6xl mb-4">🎉</div>
@@ -124,6 +152,11 @@ export default function LessonPage() {
                 <p className="text-green-700 mb-4">
                   You've completed this lesson and earned the{" "}
                   <strong>{lesson.badge.name}</strong> NFT badge!
+                  {isConnected && hash && (
+                    <span className="block mt-2 text-sm">
+                      Transaction: <a href={`https://basescan.org/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="underline">{hash.slice(0, 10)}...</a>
+                    </span>
+                  )}
                 </p>
                 <div className="flex gap-4 justify-center">
                   <Link
@@ -147,13 +180,25 @@ export default function LessonPage() {
                 </h3>
                 <p className="text-purple-700 mb-4">
                   Badge Reward: <strong>{lesson.badge.name}</strong> {lesson.badge.image}
+                  {isConnected && <span className="block mt-1 text-sm">✨ This badge will be minted as an NFT on Base!</span>}
                 </p>
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                    Error: {error.message}
+                  </div>
+                )}
                 <button
                   onClick={handleCompleteLesson}
-                  disabled={isCompleting}
+                  disabled={isPending || isConfirming}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isCompleting ? "Minting NFT Badge..." : "Complete Lesson & Mint Badge"}
+                  {isPending
+                    ? "Waiting for approval..."
+                    : isConfirming
+                    ? "Minting NFT Badge..."
+                    : isConnected
+                    ? "Complete Lesson & Mint NFT Badge"
+                    : "Complete Lesson & Save Progress"}
                 </button>
               </div>
             )}
