@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import Link from "next/link";
-import { ConnectWallet } from "@/components/ConnectWallet";
 import { useAccount } from "wagmi";
 
 export default function Home() {
@@ -47,7 +46,7 @@ export default function Home() {
             Master blockchain technology. Earn NFT badges.
           </p>
           <div className="flex justify-center">
-            <ConnectWallet />
+
           </div>
         </header>
 

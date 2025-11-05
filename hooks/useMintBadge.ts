@@ -1,33 +1,30 @@
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { NFT_CONTRACT_ABI, NFT_CONTRACT_ADDRESS } from '@/lib/contract';
+'use client';
+
+import { useWriteContract, useAccount } from 'wagmi';
+import { nftBadgeABI } from '@/lib/abis/NFTBadge';
 
 export function useMintBadge() {
-  const { data: hash, writeContract, isPending, error } = useWriteContract();
+  const { writeContract, isPending } = useWriteContract();
+  const { address: accountAddress, isConnected } = useAccount();
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    });
-
-  const mintBadge = async (lessonId: number) => {
-    if (NFT_CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
-      throw new Error('Contract not deployed yet. Please deploy the contract first.');
+  const mintBadge = async (moduleId: string) => {
+    if (!isConnected) {
+      console.error('User is not connected');
+      return;
     }
+    // In a real application, you would have a mapping of module IDs to token URIs
+    const tokenURI = `https://web3-learning-platform.com/api/nft-metadata/${moduleId}`;
 
     writeContract({
-      address: NFT_CONTRACT_ADDRESS,
-      abi: NFT_CONTRACT_ABI,
-      functionName: 'mintBadge',
-      args: [BigInt(lessonId)],
+      abi: nftBadgeABI,
+      address: process.env.NEXT_PUBLIC_NFT_BADGE_CONTRACT_ADDRESS as `0x${string}`,
+      functionName: 'safeMint',
+      args: [accountAddress, tokenURI],
     });
   };
 
   return {
     mintBadge,
-    hash,
-    isPending,
-    isConfirming,
-    isConfirmed,
-    error,
+    isLoading: isPending,
   };
 }

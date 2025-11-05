@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Providers } from "@/components/Providers";
+import type { Metadata } from 'next';
+import './globals.css';
+import { Providers } from './providers';
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: "Web3 Learning Academy",
-  description: "Learn blockchain and Web3 technologies. Earn NFT badges for completing lessons.",
+  title: 'Web3 Learning Academy',
+  description: 'Learn blockchain and Web3 technologies. Earn NFT badges for completing lessons.',
 };
 
 export default function RootLayout({
@@ -14,9 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-gradient-to-r from-gray-900 to-blue-900 text-white">
         <Providers>
-          {children}
+          <Header />
+          <main className="container mx-auto p-6">{children}</main>
         </Providers>
       </body>
     </html>
